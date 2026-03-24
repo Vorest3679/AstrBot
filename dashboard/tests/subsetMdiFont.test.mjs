@@ -7,10 +7,12 @@ import { tmpdir } from 'os';
 import {
   collectFiles,
   scanUsedIcons,
+  mergeRequiredIcons,
   parseIconCodepoints,
   resolveUsedIcons,
   extractUtilityCss,
   ICON_CLASS_PATTERN,
+  VUETIFY_MDI_ALIASES,
 } from '../scripts/subset-mdi-font.mjs';
 
 // ── Helper: create a temporary directory tree for file-system tests ─────────
@@ -109,6 +111,20 @@ test('scanUsedIcons returns empty set when no icons found', () => {
   assert.equal(icons.size, 0);
 
   rmSync(tmp, { recursive: true });
+});
+
+test('mergeRequiredIcons includes Vuetify internal alias icons', () => {
+  const icons = mergeRequiredIcons(new Set(['mdi-home']));
+
+  assert.ok(icons.has('mdi-home'));
+  assert.ok(icons.has('mdi-radiobox-marked'));
+  assert.ok(icons.has('mdi-radiobox-blank'));
+  assert.ok(icons.has('mdi-menu-down'));
+});
+
+test('VUETIFY_MDI_ALIASES tracks radio control icons explicitly', () => {
+  assert.ok(VUETIFY_MDI_ALIASES.includes('mdi-radiobox-marked'));
+  assert.ok(VUETIFY_MDI_ALIASES.includes('mdi-radiobox-blank'));
 });
 
 // ── parseIconCodepoints ─────────────────────────────────────────────────────

@@ -1,0 +1,19 @@
+/*
+ * Fallback icons for Vuetify controls that may be missing from a stale MDI subset.
+ * Import this before the generated subset CSS so regenerated glyph rules override it.
+ */
+
+.mdi-radiobox-blank::before,
+.mdi-radiobox-marked::before {
+  content: "";
+  width: 0.875em;
+  height: 0.875em;
+  box-sizing: border-box;
+  border: 0.09375em solid currentColor;
+  border-radius: 50%;
+  vertical-align: -0.1em;
+}
+
+.mdi-radiobox-marked::before {
+  background-image: radial-gradient(circle at center, currentColor 0 34%, transparent 38%);
+}

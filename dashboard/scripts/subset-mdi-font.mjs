@@ -27,10 +27,46 @@ const OUT_DIR = join(ROOT, "src/assets/mdi-subset");
 
 // Utility classes that should not be treated as icon names
 const UTILITY_CLASSES = new Set([
-    "mdi-set", "mdi-spin", "mdi-rotate-45", "mdi-rotate-90", "mdi-rotate-135",
-    "mdi-rotate-180", "mdi-rotate-225", "mdi-rotate-270", "mdi-rotate-315",
-    "mdi-flip-h", "mdi-flip-v", "mdi-light", "mdi-dark", "mdi-inactive",
-    "mdi-18px", "mdi-24px", "mdi-36px", "mdi-48px",
+    "mdi-set","mdi-spin","mdi-rotate-45","mdi-rotate-90","mdi-rotate-135",
+    "mdi-rotate-180","mdi-rotate-225","mdi-rotate-270","mdi-rotate-315",
+    "mdi-flip-h","mdi-flip-v","mdi-light","mdi-dark","mdi-inactive",
+    "mdi-18px","mdi-24px","mdi-36px","mdi-48px",
+]);
+
+// Vuetify resolves several icon aliases internally, so they may never appear
+// as literal mdi-* strings in app source files. Keep this list aligned with
+// Vuetify's default font-based mdi alias set.
+export const VUETIFY_MDI_ALIASES = Object.freeze([
+    "mdi-chevron-up",
+    "mdi-check",
+    "mdi-close-circle",
+    "mdi-close",
+    "mdi-information",
+    "mdi-alert-circle",
+    "mdi-chevron-left",
+    "mdi-chevron-right",
+    "mdi-checkbox-marked",
+    "mdi-checkbox-blank-outline",
+    "mdi-minus-box",
+    "mdi-circle",
+    "mdi-arrow-up",
+    "mdi-arrow-down",
+    "mdi-chevron-down",
+    "mdi-menu",
+    "mdi-menu-down",
+    "mdi-radiobox-marked",
+    "mdi-radiobox-blank",
+    "mdi-pencil",
+    "mdi-star-outline",
+    "mdi-star",
+    "mdi-star-half-full",
+    "mdi-cached",
+    "mdi-page-first",
+    "mdi-page-last",
+    "mdi-unfold-more-horizontal",
+    "mdi-paperclip",
+    "mdi-plus",
+    "mdi-minus",
 ]);
 
 // Regex to match individual icon class definitions in MDI CSS
@@ -65,7 +101,15 @@ export function scanUsedIcons(sourceFiles) {
     return usedIcons;
 }
 
-/** Parse @mdi/font CSS and return a Map of icon-name → hex codepoint. */
+/** Merge statically required framework icons into the scanned icon set. */
+export function mergeRequiredIcons(
+    usedIcons,
+    requiredIcons = VUETIFY_MDI_ALIASES,
+) {
+    return new Set([...usedIcons, ...requiredIcons]);
+}
+
+/** Parse @mdi/font CSS and return a Map of icon-name -> hex codepoint. */
 export function parseIconCodepoints(mdiCSS) {
     const iconMap = new Map();
     for (const match of mdiCSS.matchAll(ICON_CLASS_PATTERN)) {
@@ -168,11 +212,15 @@ export async function runMdiSubset() {
 
         // Step 1: Scan source files for mdi-* icon names
         const sourceFiles = collectFiles(SRC, [".vue", ".ts", ".js"]);
-        const usedIcons = scanUsedIcons(sourceFiles);
+        const scannedIcons = scanUsedIcons(sourceFiles);
+        const usedIcons = mergeRequiredIcons(scannedIcons);
         if (usedIcons.size === 0) {
-            throw new Error("No mdi-* icons found in source files. Something is wrong with scanning.");
+            throw new Error("No mdi-* icons found in source files or required icon aliases. Something is wrong with scanning.");
         }
-        console.log(`✅ Found ${usedIcons.size} unique mdi-* icons in source files`);
+        if (scannedIcons.size === 0) {
+            console.warn("⚠️  No mdi-* icons found in app source; generating subset from required framework aliases only.");
+        }
+        console.log(`✅ Found ${scannedIcons.size} unique mdi-* icons in source files (+${usedIcons.size - scannedIcons.size} required framework icons)`);
 
         // Step 2: Parse @mdi/font CSS to get codepoints for each icon
         const mdiCSS = readFileSync(MDI_CSS_PATH, "utf-8");
